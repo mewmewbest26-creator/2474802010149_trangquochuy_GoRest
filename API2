@@ -1,0 +1,32 @@
+name: API Monitor (Shift-Right)
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check API Latency and Status
+        run: |
+          START_TIME=$(date +%s%3N)
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://gorest.co.in/public/v2/users)
+          END_TIME=$(date +%s%3N)
+          RESPONSE_TIME=$((END_TIME - START_TIME))
+
+          echo "HTTP Status Code: $HTTP_STATUS"
+          echo "Response Time: ${RESPONSE_TIME}ms"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "API Request Failed with Status $HTTP_STATUS"
+            exit 1
+          fi
+
+          if [ "$RESPONSE_TIME" -gt 800 ]; then
+            echo "Response time exceeded 800ms limit! (${RESPONSE_TIME}ms)"
+            exit 1
+          fi
+
+          echo "Monitor Check Passed!"
